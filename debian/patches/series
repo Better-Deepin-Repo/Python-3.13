@@ -28,4 +28,3 @@ gchead-alignment.diff
 issue127330.diff
 no-sphinx-8.2.diff
 Add-Debian-specific-documentation-path-to-IDLE-menu.diff
-sphinx9-notfound-compat.diff

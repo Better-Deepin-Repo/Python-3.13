@@ -11,6 +11,8 @@ import sys
 from importlib import import_module
 from importlib.util import find_spec
 
+from sphinx import version_info as sphinx_version_info
+
 # Make our custom extensions available to Sphinx
 sys.path.append(os.path.abspath('tools/extensions'))
 sys.path.append(os.path.abspath('includes'))
@@ -39,12 +41,16 @@ extensions = [
     'sphinx.ext.extlinks',
 ]
 
-# Skip if downstream redistributors haven't installed them
+# Skip if downstream redistributors haven't installed them.
+# sphinx-notfound-page versions currently packaged in some distributions are
+# not compatible with Sphinx 9's config option API.
 _OPTIONAL_EXTENSIONS = (
-    'notfound.extension',
-    'sphinxext.opengraph',
+    ('notfound.extension', (9, 0)),
+    ('sphinxext.opengraph', None),
 )
-for optional_ext in _OPTIONAL_EXTENSIONS:
+for optional_ext, max_sphinx_version in _OPTIONAL_EXTENSIONS:
+    if max_sphinx_version and sphinx_version_info[:2] >= max_sphinx_version:
+        continue
     try:
         if find_spec(optional_ext) is not None:
             extensions.append(optional_ext)
