@@ -16,7 +16,6 @@ min-lib-argparse.diff
 min-argparse-no-shutil.diff
 min-ntpath-import.diff
 min-compileall.diff
-min-pyrepl-import.dff
 min-pyrepl-sitebuiltins.diff
 makefile-bootstrap.diff
 test-freeze-strip-libdir.diff

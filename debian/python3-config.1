@@ -2,33 +2,33 @@
 .SH NAME
 python\-config \- output build options for python C/C++ extensions or embedding
 .SH SYNOPSIS
-.BI "python\-config"
+.B python\-config
 [
-.BI "\-\-prefix"
+.B \-\-prefix
 ]
 [
-.BI "\-\-exec\-prefix"
+.B \-\-exec\-prefix
 ]
 [
-.BI "\-\-includes"
+.B \-\-includes
 ]
 [
-.BI "\-\-libs"
+.B \-\-libs
 ]
 [
-.BI "\-\-cflags"
+.B \-\-cflags
 ]
 [
-.BI "\-\-ldflags"
+.B \-\-ldflags
 ]
 [
-.BI "\-\-extension\-suffix"
+.B \-\-extension\-suffix
 ]
 [
-.BI "\-\-abiflags"
+.B \-\-abiflags
 ]
 [
-.BI "\-\-help"
+.B \-\-help
 ]
 .SH DESCRIPTION
 .B python\-config
@@ -37,34 +37,36 @@ extension modules that can be loaded dynamically (at run time) into
 the interpreter.
 .SH OPTIONS
 .TP
-.BI "\-\-abiflags"
+.B \-\-abiflags
 print the the ABI flags as specified by PEP 3149.
 .TP
-.BI "\-\-cflags"
+.B \-\-cflags
 print the C compiler flags.
 .TP
-.BI "\-\-ldflags"
+.B \-\-ldflags
 print the flags that should be passed to the linker.
 .TP
-.BI "\-\-includes"
-similar to \fI\-\-cflags\fP but only with \-I options (path to python header files).
+.B \-\-includes
+similar to \fI\-\-cflags\fP but only with \-I options
+(path to python header files).
 .TP
-.BI "\-\-libs"
-similar to \fI\-\-ldflags\fP but only with \-l options (used libraries).
+.B \-\-libs
+similar to \fI\-\-ldflags\fP but only with \-l options
+(used libraries).
 .TP
-.BI "\-\-prefix"
+.B \-\-prefix
 prints the prefix (base directory) under which python can be found.
 .TP
-.BI "\-\-exec\-prefix"
-print the prefix used for executable program directories (such as bin, sbin, etc).
+.B \-\-exec\-prefix
+print the prefix used for executable program directories
+(such as bin, sbin, etc).
 .TP
-.BI "\-\-extension\-suffix"
+.B \-\-extension\-suffix
 print the extension suffix used for binary extensions.
 .TP
-.BI "\-\-help"
+.B \-\-help
 print the usage message.
-.PP
-
+.
 .SH EXAMPLES
 To build the singe\-file c program \fIprog\fP against the python library, use
 .PP

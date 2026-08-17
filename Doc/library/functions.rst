@@ -468,7 +468,7 @@ are always available.  They are listed here in alphabetical order.
    :noindex:
 
    Create a new dictionary.  The :class:`dict` object is the dictionary class.
-   See :class:`dict` and :ref:`typesmapping` for documentation about this class.
+   See also :ref:`typesmapping` for documentation about this class.
 
    For other containers see the built-in :class:`list`, :class:`set`, and
    :class:`tuple` classes, as well as the :mod:`collections` module.
@@ -591,17 +591,19 @@ are always available.  They are listed here in alphabetical order.
    .. warning::
 
       This function executes arbitrary code. Calling it with
-      user-supplied input may lead to security vulnerabilities.
+      untrusted user-supplied input will lead to security vulnerabilities.
 
    The *source* argument is parsed and evaluated as a Python expression
-   (technically speaking, a condition list) using the *globals* and *locals*
-   mappings as global and local namespace.  If the *globals* dictionary is
-   present and does not contain a value for the key ``__builtins__``, a
+   (technically speaking, an :ref:`expression list <exprlists>`)
+   using the *globals* and *locals* mappings as global and local namespace.
+   If the *globals* dictionary is present and does not contain a value for the
+   key ``__builtins__``, a
    reference to the dictionary of the built-in module :mod:`builtins` is
-   inserted under that key before *source* is parsed.  That way you can
-   control what builtins are available to the executed code by inserting your
-   own ``__builtins__`` dictionary into *globals* before passing it to
-   :func:`eval`.  If the *locals* mapping is omitted it defaults to the
+   inserted under that key before *source* is parsed.
+   Overriding ``__builtins__`` can be used to restrict or change the available
+   names, but this is **not** a security mechanism: the executed code can
+   still access all builtins.
+   If the *locals* mapping is omitted it defaults to the
    *globals* dictionary.  If both mappings are omitted, the source is
    executed with the *globals* and *locals* in the environment where
    :func:`eval` is called.  Note, *eval()* will only have access to the
@@ -614,6 +616,9 @@ are always available.  They are listed here in alphabetical order.
       >>> x = 1
       >>> eval('x+1')
       2
+
+      >>> eval("1, 2")
+      (1, 2)
 
    This function can also be used to execute arbitrary code objects (such as
    those created by :func:`compile`).  In this case, pass a code object instead
@@ -628,7 +633,7 @@ are always available.  They are listed here in alphabetical order.
    If the given source is a string, then leading and trailing spaces and tabs
    are stripped.
 
-   See :func:`ast.literal_eval` for a function that can safely evaluate strings
+   See :func:`ast.literal_eval` for a function to evaluate strings
    with expressions containing only literals.
 
    .. audit-event:: exec code_object eval
@@ -652,7 +657,7 @@ are always available.  They are listed here in alphabetical order.
    .. warning::
 
       This function executes arbitrary code. Calling it with
-      user-supplied input may lead to security vulnerabilities.
+      untrusted user-supplied input will lead to security vulnerabilities.
 
    This function supports dynamic execution of Python code. *source* must be
    either a string or a code object.  If it is a string, the string is parsed as
@@ -683,9 +688,10 @@ are always available.  They are listed here in alphabetical order.
 
    If the *globals* dictionary does not contain a value for the key
    ``__builtins__``, a reference to the dictionary of the built-in module
-   :mod:`builtins` is inserted under that key.  That way you can control what
-   builtins are available to the executed code by inserting your own
-   ``__builtins__`` dictionary into *globals* before passing it to :func:`exec`.
+   :mod:`builtins` is inserted under that key.
+   Overriding ``__builtins__`` can be used to restrict or change the available
+   names, but this is **not** a security mechanism: the executed code can
+   still access all builtins.
 
    The *closure* argument specifies a closure--a tuple of cellvars.
    It's only valid when the *object* is a code object containing
@@ -842,7 +848,7 @@ are always available.  They are listed here in alphabetical order.
    :noindex:
 
    Return a new :class:`frozenset` object, optionally with elements taken from
-   *iterable*.  ``frozenset`` is a built-in class.  See :class:`frozenset` and
+   *iterable*.  :class:`frozenset` is a built-in class.  See also
    :ref:`types-set` for documentation about this class.
 
    For other containers see the built-in :class:`set`, :class:`list`,
@@ -1661,7 +1667,7 @@ are always available.  They are listed here in alphabetical order.
 
    If given, *doc* will be the docstring of the property attribute. Otherwise, the
    property will copy *fget*'s docstring (if it exists).  This makes it possible to
-   create read-only properties easily using :func:`property` as a :term:`decorator`::
+   create read-only properties easily using :deco:`property` as a :term:`decorator`::
 
       class Parrot:
           def __init__(self):
@@ -1795,7 +1801,7 @@ are always available.  They are listed here in alphabetical order.
    :noindex:
 
    Return a new :class:`set` object, optionally with elements taken from
-   *iterable*.  ``set`` is a built-in class.  See :class:`set` and
+   *iterable*.  :class:`set` is a built-in class.  See also
    :ref:`types-set` for documentation about this class.
 
    For other containers see the built-in :class:`frozenset`, :class:`list`,
@@ -1902,7 +1908,7 @@ are always available.  They are listed here in alphabetical order.
    be used in the class definition (such as ``f()``).
 
    Static methods in Python are similar to those found in Java or C++. Also, see
-   :func:`classmethod` for a variant that is useful for creating alternate class
+   :deco:`classmethod` for a variant that is useful for creating alternate class
    constructors.
 
    Like all decorators, it is also possible to call ``staticmethod`` as
@@ -2084,6 +2090,11 @@ are always available.  They are listed here in alphabetical order.
    appropriate metaclass machinery (usually :meth:`~object.__init_subclass__`)
    in the same way that keywords in a class
    definition (besides *metaclass*) would.
+
+   Unlike a :keyword:`class` statement, the three argument form does not
+   call the metaclass ``__prepare__`` method (see :ref:`prepare`).  Use
+   :func:`types.new_class` to dynamically create a class using the
+   appropriate metaclass.
 
    See also :ref:`class-customization`.
 

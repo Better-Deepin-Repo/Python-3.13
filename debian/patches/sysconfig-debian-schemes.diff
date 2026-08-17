@@ -81,7 +81,7 @@ This adds two schemes:
  
 --- a/Lib/test/test_sysconfig.py
 +++ b/Lib/test/test_sysconfig.py
-@@ -393,7 +393,7 @@
+@@ -395,7 +395,7 @@
          self.assertTrue(os.path.isfile(config_h), config_h)
  
      def test_get_scheme_names(self):

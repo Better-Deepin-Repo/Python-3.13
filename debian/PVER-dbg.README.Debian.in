@@ -1,10 +1,6 @@
 Contents of the @PVER@-dbg package
 -------------------------------------
 
-For debugging python and extension modules, you may want to add the contents
-of /usr/share/doc/@PVER@/gdbinit (found in the @PVER@-dev package) to your
-~/.gdbinit file.
-
 @PVER@-dbg contains two sets of packages:
 
  - debugging symbols for the standard @PVER@ build. When this package

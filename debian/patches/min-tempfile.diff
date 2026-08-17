@@ -8,7 +8,7 @@ Forwarded: not-needed
 
 --- a/Lib/tempfile.py
 +++ b/Lib/tempfile.py
-@@ -40,7 +40,212 @@
+@@ -40,7 +40,212 @@ import functools as _functools
  import warnings as _warnings
  import io as _io
  import os as _os
@@ -222,7 +222,7 @@ Forwarded: not-needed
  import errno as _errno
  from random import Random as _Random
  import sys as _sys
-@@ -932,7 +1137,7 @@
+@@ -933,7 +1138,7 @@ class TemporaryDirectory:
                  if not ignore_errors:
                      raise
  

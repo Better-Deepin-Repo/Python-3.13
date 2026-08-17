@@ -6,6 +6,7 @@ import datetime
 import functools
 import gc
 import importlib
+import importlib.util
 import inspect
 import io
 import linecache
@@ -1858,6 +1859,10 @@ class TestClassesAndFunctions(unittest.TestCase):
         self.assertEqual(inspect.get_annotations(isa2), {})
         self.assertEqual(inspect.get_annotations(isa2, eval_str=True), {})
         self.assertEqual(inspect.get_annotations(isa2, eval_str=False), {})
+
+        def f(*args: *tuple[int, ...]): ...
+        self.assertEqual(inspect.get_annotations(f, eval_str=True),
+                     {'args': (*tuple[int, ...],)[0]})
 
         def times_three(fn):
             @functools.wraps(fn)
@@ -6293,8 +6298,7 @@ class TestSignatureDefinitions(unittest.TestCase):
     def test_os_module_has_signatures(self):
         unsupported_signature = {'chmod', 'utime'}
         unsupported_signature |= {name for name in
-            ['get_terminal_size', 'posix_spawn', 'posix_spawnp',
-             'register_at_fork', 'startfile']
+            ['get_terminal_size', 'register_at_fork', 'startfile']
             if hasattr(os, name)}
         self._test_module_has_signatures(os, unsupported_signature=unsupported_signature)
 
@@ -6506,6 +6510,19 @@ class TestUnwrap(unittest.TestCase):
 
 
 class TestMain(unittest.TestCase):
+    @staticmethod
+    def _expected_cached(module):
+        # assert_python_ok() runs the subprocess in isolated mode (-I), which
+        # ignores PYTHONPYCACHEPREFIX, so compute the expected cached path the
+        # same way (i.e. without any pycache prefix) to stay independent of the
+        # environment the test suite is run in.  Modules without a cached path
+        # (e.g. frozen modules such as ntpath/importlib.machinery on Windows)
+        # report None, so preserve that.
+        if module.__spec__.cached is None:
+            return None
+        with support.swap_attr(sys, 'pycache_prefix', None):
+            return importlib.util.cache_from_source(module.__spec__.origin)
+
     def test_only_source(self):
         module = importlib.import_module('unittest')
         rc, out, err = assert_python_ok('-m', 'inspect',
@@ -6545,13 +6562,13 @@ class TestMain(unittest.TestCase):
         rc, out, err = assert_python_ok(*args, '-m', 'inspect',
                                         'unittest', '--details')
         output = out.decode()
+        cached = self._expected_cached(module)
         # Just a quick sanity check on the output
         self.assertIn(module.__spec__.name, output)
         self.assertIn(module.__name__, output)
         self.assertIn(module.__spec__.origin, output)
         self.assertIn(module.__file__, output)
-        self.assertIn(module.__spec__.cached, output)
-        self.assertIn(module.__cached__, output)
+        self.assertIn(cached, output)
         self.assertEqual(err, b'')
 
 

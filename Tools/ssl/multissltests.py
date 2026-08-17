@@ -44,14 +44,17 @@ log = logging.getLogger("multissl")
 
 OPENSSL_OLD_VERSIONS = [
     "1.1.1w",
+    "3.1.8",
+    "3.2.6",
+    "3.3.7",
 ]
 
 OPENSSL_RECENT_VERSIONS = [
-    "3.0.18",
-    "3.1.7",
-    "3.2.6",
-    "3.3.5",
-    "3.4.0",
+    "3.0.21",
+    "3.4.6",
+    "3.5.7",
+    "3.6.3",
+    # See make_ssl_data.py for notes on adding a new version.
 ]
 
 LIBRESSL_OLD_VERSIONS = [

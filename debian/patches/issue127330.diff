@@ -4,7 +4,7 @@ Origin: upstream, https://github.com/python/cpython/commit/db5c5763f3e3172f1dd01
 
 --- a/Modules/_ssl.c
 +++ b/Modules/_ssl.c
-@@ -120,8 +120,9 @@ static void _PySSLFixErrno(void) {
+@@ -120,8 +120,9 @@
  #endif
  
  /* Include generated data (error codes) */
@@ -17926,7 +17926,7 @@ Origin: upstream, https://github.com/python/cpython/commit/db5c5763f3e3172f1dd01
 +
 --- a/Tools/c-analyzer/cpython/_parser.py
 +++ b/Tools/c-analyzer/cpython/_parser.py
-@@ -70,9 +70,7 @@ Python/thread_pthread.h
+@@ -70,9 +70,7 @@
  Python/thread_pthread_stubs.h
  
  # only huge constants (safe but parsing is slow)
@@ -17939,7 +17939,7 @@ Origin: upstream, https://github.com/python/cpython/commit/db5c5763f3e3172f1dd01
  Modules/unicodename_db.h
 --- a/Tools/ssl/make_ssl_data.py
 +++ b/Tools/ssl/make_ssl_data.py
-@@ -5,9 +5,28 @@ This script should be called *manually*
+@@ -5,9 +5,28 @@
  `library` and `reason` mnemonics to a more recent OpenSSL version.
  
  It takes two arguments:
@@ -17969,7 +17969,7 @@ Origin: upstream, https://github.com/python/cpython/commit/db5c5763f3e3172f1dd01
  """
  
  import argparse
-@@ -16,6 +35,7 @@ import operator
+@@ -16,6 +35,7 @@
  import os
  import re
  import sys
@@ -17977,7 +17977,7 @@ Origin: upstream, https://github.com/python/cpython/commit/db5c5763f3e3172f1dd01
  
  
  parser = argparse.ArgumentParser(
-@@ -118,9 +138,17 @@ def main():
+@@ -118,9 +138,17 @@
      # sort by libname, numeric error code
      args.reasons = sorted(reasons, key=operator.itemgetter(0, 3))
  
@@ -17997,13 +17997,3 @@ Origin: upstream, https://github.com/python/cpython/commit/db5c5763f3e3172f1dd01
      ]
      lines.extend(gen_library_codes(args))
      lines.append("")
---- a/Tools/ssl/multissltests.py
-+++ b/Tools/ssl/multissltests.py
-@@ -51,6 +51,7 @@ OPENSSL_RECENT_VERSIONS = [
-     "3.1.7",
-     "3.2.6",
-     "3.3.5",
-+    "3.4.0",
- ]
- 
- LIBRESSL_OLD_VERSIONS = [

@@ -611,9 +611,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    argument, and store in the instance's :c:member:`~PyVarObject.ob_size` field.
    Note that the :c:member:`~PyVarObject.ob_size` field may later be used for
    other purposes. For example, :py:type:`int` instances use the bits of
-   :c:member:`~PyVarObject.ob_size` in an implementation-defined
-   way; the underlying storage and its size should be accessed using
-   :c:func:`PyLong_Export`.
+   :c:member:`~PyVarObject.ob_size` in an implementation-defined way.
 
    .. note::
 
@@ -1412,6 +1410,52 @@ and :c:data:`PyType_Type` effectively act as defaults.)
       .. warning::
          This flag is present in header files, but is not be used.
          It will be removed in a future version of CPython
+
+
+   .. c:macro:: Py_TPFLAGS_HAVE_VERSION_TAG
+
+      This is a :term:`soft deprecated` macro that does nothing.
+      Historically, this would indicate that the
+      :c:member:`~PyTypeObject.tp_version_tag` field was available and
+      initialized.
+
+
+   .. c:macro:: Py_TPFLAGS_INLINE_VALUES
+
+      This bit indicates that instances of this type will have an "inline values"
+      array (containing the object's attributes) placed directly after the end
+      of the object.
+
+      This requires that :c:macro:`Py_TPFLAGS_HAVE_GC` is set.
+
+      **Inheritance:**
+
+      This flag is not inherited.
+
+      .. versionadded:: 3.13
+
+
+   .. c:macro:: Py_TPFLAGS_IS_ABSTRACT
+
+      This bit indicates that this is an abstract type and therefore cannot
+      be instantiated.
+
+      **Inheritance:**
+
+      This flag is not inherited.
+
+      .. seealso::
+         :mod:`abc`
+
+
+   .. c:macro:: Py_TPFLAGS_HAVE_STACKLESS_EXTENSION
+
+      Internal. Do not set or unset this flag.
+      Historically, this was a reserved flag for use in Stackless Python.
+
+      .. warning::
+            This flag is present in header files, but is not be used.
+            This may be removed in a future version of CPython.
 
 
 .. c:member:: const char* PyTypeObject.tp_doc
@@ -2699,13 +2743,13 @@ Buffer Object Structures
    steps:
 
    (1) Check if the request can be met. If not, raise :exc:`BufferError`,
-       set :c:expr:`view->obj` to ``NULL`` and return ``-1``.
+       set ``view->obj`` to ``NULL`` and return ``-1``.
 
    (2) Fill in the requested fields.
 
    (3) Increment an internal counter for the number of exports.
 
-   (4) Set :c:expr:`view->obj` to *exporter* and increment :c:expr:`view->obj`.
+   (4) Set ``view->obj`` to *exporter* and increment ``view->obj``.
 
    (5) Return ``0``.
 
@@ -2713,10 +2757,10 @@ Buffer Object Structures
    schemes can be used:
 
    * Re-export: Each member of the tree acts as the exporting object and
-     sets :c:expr:`view->obj` to a new reference to itself.
+     sets ``view->obj`` to a new reference to itself.
 
    * Redirect: The buffer request is redirected to the root object of the
-     tree. Here, :c:expr:`view->obj` will be a new reference to the root
+     tree. Here, ``view->obj`` will be a new reference to the root
      object.
 
    The individual fields of *view* are described in section
@@ -2760,7 +2804,7 @@ Buffer Object Structures
    *view* argument.
 
 
-   This function MUST NOT decrement :c:expr:`view->obj`, since that is
+   This function MUST NOT decrement ``view->obj``, since that is
    done automatically in :c:func:`PyBuffer_Release` (this scheme is
    useful for breaking reference cycles).
 

@@ -1,10 +1,10 @@
 # Simple test suite for http/cookies.py
-
 import copy
 import unittest
 import doctest
 from http import cookies
 import pickle
+import urllib.parse
 from test import support
 from test.support.testcase import ExtraAssertions
 
@@ -153,17 +153,19 @@ class CookieTests(unittest.TestCase, ExtraAssertions):
 
         self.assertEqual(C.output(['path']),
             'Set-Cookie: Customer="WILE_E_COYOTE"; Path=/acme')
-        self.assertEqual(C.js_output(), r"""
+        cookie_encoded = urllib.parse.quote('Customer="WILE_E_COYOTE"; Path=/acme; Version=1', safe='', encoding='utf-8')
+        self.assertEqual(C.js_output(), fr"""
         <script type="text/javascript">
         <!-- begin hiding
-        document.cookie = "Customer=\"WILE_E_COYOTE\"; Path=/acme; Version=1";
+        document.cookie = decodeURIComponent("{cookie_encoded}");
         // end hiding -->
         </script>
         """)
-        self.assertEqual(C.js_output(['path']), r"""
+        cookie_encoded = urllib.parse.quote('Customer="WILE_E_COYOTE"; Path=/acme', safe='', encoding='utf-8')
+        self.assertEqual(C.js_output(['path']), fr"""
         <script type="text/javascript">
         <!-- begin hiding
-        document.cookie = "Customer=\"WILE_E_COYOTE\"; Path=/acme";
+        document.cookie = decodeURIComponent("{cookie_encoded}");
         // end hiding -->
         </script>
         """)
@@ -260,17 +262,19 @@ class CookieTests(unittest.TestCase, ExtraAssertions):
 
         self.assertEqual(C.output(['path']),
                          'Set-Cookie: Customer="WILE_E_COYOTE"; Path=/acme')
-        self.assertEqual(C.js_output(), r"""
+        expected_encoded_cookie = urllib.parse.quote('Customer=\"WILE_E_COYOTE\"; Path=/acme; Version=1', safe='', encoding='utf-8')
+        self.assertEqual(C.js_output(), fr"""
         <script type="text/javascript">
         <!-- begin hiding
-        document.cookie = "Customer=\"WILE_E_COYOTE\"; Path=/acme; Version=1";
+        document.cookie = decodeURIComponent("{expected_encoded_cookie}");
         // end hiding -->
         </script>
         """)
-        self.assertEqual(C.js_output(['path']), r"""
+        expected_encoded_cookie = urllib.parse.quote('Customer=\"WILE_E_COYOTE\"; Path=/acme', safe='', encoding='utf-8')
+        self.assertEqual(C.js_output(['path']), fr"""
         <script type="text/javascript">
         <!-- begin hiding
-        document.cookie = "Customer=\"WILE_E_COYOTE\"; Path=/acme";
+        document.cookie = decodeURIComponent("{expected_encoded_cookie}");
         // end hiding -->
         </script>
         """)
@@ -361,13 +365,17 @@ class MorselTests(unittest.TestCase):
             self.assertEqual(
                 M.output(),
                 "Set-Cookie: %s=%s; Path=/foo" % (i, "%s_coded_val" % i))
+            expected_encoded_cookie = urllib.parse.quote(
+                "%s=%s; Path=/foo" % (i, "%s_coded_val" % i),
+                safe='', encoding='utf-8',
+            )
             expected_js_output = """
         <script type="text/javascript">
         <!-- begin hiding
-        document.cookie = "%s=%s; Path=/foo";
+        document.cookie = decodeURIComponent("%s");
         // end hiding -->
         </script>
-        """ % (i, "%s_coded_val" % i)
+        """ % (expected_encoded_cookie,)
             self.assertEqual(M.js_output(), expected_js_output)
         for i in ["foo bar", "foo@bar"]:
             # Try some illegal characters
@@ -574,6 +582,14 @@ class MorselTests(unittest.TestCase):
             with self.assertRaises(cookies.CookieError):
                 morsel["path"] = c0
 
+            # .__setstate__()
+            with self.assertRaises(cookies.CookieError):
+                morsel.__setstate__({'key': c0, 'value': 'val', 'coded_value': 'coded'})
+            with self.assertRaises(cookies.CookieError):
+                morsel.__setstate__({'key': 'key', 'value': c0, 'coded_value': 'coded'})
+            with self.assertRaises(cookies.CookieError):
+                morsel.__setstate__({'key': 'key', 'value': 'val', 'coded_value': c0})
+
             # .setdefault()
             with self.assertRaises(cookies.CookieError):
                 morsel.setdefault("path", c0)
@@ -587,6 +603,18 @@ class MorselTests(unittest.TestCase):
                 morsel.set("path", c0, "coded-value")
             with self.assertRaises(cookies.CookieError):
                 morsel.set("path", "val", c0)
+
+            # .update()
+            with self.assertRaises(cookies.CookieError):
+                morsel.update({"path": c0})
+            with self.assertRaises(cookies.CookieError):
+                morsel.update({c0: "val"})
+
+            # .__ior__()
+            with self.assertRaises(cookies.CookieError):
+                morsel |= {"path": c0}
+            with self.assertRaises(cookies.CookieError):
+                morsel |= {c0: "val"}
 
     def test_control_characters_output(self):
         # Tests that even if the internals of Morsel are modified
@@ -607,6 +635,24 @@ class MorselTests(unittest.TestCase):
             cookie["cookie"] = morsel
             with self.assertRaises(cookies.CookieError):
                 cookie.output()
+
+        # Tests that .js_output() also has control character safeguards.
+        for c0 in support.control_characters_c0():
+            morsel = cookies.Morsel()
+            morsel.set("key", "value", "coded-value")
+            morsel._key = c0  # Override private variable.
+            cookie = cookies.SimpleCookie()
+            cookie["cookie"] = morsel
+            with self.assertRaises(cookies.CookieError):
+                cookie.js_output()
+
+            morsel = cookies.Morsel()
+            morsel.set("key", "value", "coded-value")
+            morsel._coded_value = c0  # Override private variable.
+            cookie = cookies.SimpleCookie()
+            cookie["cookie"] = morsel
+            with self.assertRaises(cookies.CookieError):
+                cookie.js_output()
 
 
 def load_tests(loader, tests, pattern):

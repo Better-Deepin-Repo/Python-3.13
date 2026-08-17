@@ -3,6 +3,7 @@
 # See test_cmd_line_script.py for testing of script execution
 
 import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -54,11 +55,22 @@ class CmdLineTest(unittest.TestCase):
     def test_help_env(self):
         out = self.verify_valid_flag('--help-env')
         self.assertIn(b'PYTHONHOME', out)
+        # Env vars in each section should be sorted alphabetically
+        # (ignoring underscores so PYTHON_FOO and PYTHONFOO intermix naturally)
+        sort_key = lambda name: name.replace(b'_', b'').lower()
+        sections = out.split(b'These variables have equivalent')
+        for section in sections:
+            envvars = re.findall(rb'^(PYTHON\w+)', section, re.MULTILINE)
+            self.assertEqual(envvars, sorted(envvars, key=sort_key),
+                             "env vars should be sorted alphabetically")
 
     @support.cpython_only
     def test_help_xoptions(self):
         out = self.verify_valid_flag('--help-xoptions')
         self.assertIn(b'-X dev', out)
+        options = re.findall(rb'^-X (\w+)', out, re.MULTILINE)
+        self.assertEqual(options, sorted(options),
+                         "options should be sorted alphabetically")
 
     @support.cpython_only
     def test_help_all(self):
@@ -195,6 +207,14 @@ class CmdLineTest(unittest.TestCase):
         self.assertTrue(data.find(b'1 loop') != -1)
         self.assertTrue(data.find(b'__main__.Timer') != -1)
 
+    @support.cpython_only
+    def test_null_byte_in_interactive_mode(self):
+        # gh-140594: Fix an out of bounds read when a single NUL character
+        # is read from the standard input in interactive mode.
+        proc = spawn_python('-i')
+        proc.communicate(b'\x00', timeout=support.SHORT_TIMEOUT)
+        self.assertEqual(proc.returncode, 0)
+
     def test_relativedir_bug46421(self):
         # Test `python -m unittest` with a relative directory beginning with ./
         # Note: We have to switch to the project's top module's directory, as per
@@ -306,8 +326,26 @@ class CmdLineTest(unittest.TestCase):
         )
         test_args = [valid_utf8, invalid_utf8]
 
-        for run_cmd in (run_default, run_c_locale, run_utf8_mode):
-            with self.subTest(run_cmd=run_cmd):
+        for run_cmd, encoding in (
+            (run_default, sys.getfilesystemencoding()),
+            (run_c_locale, None),
+            (run_utf8_mode, None),
+        ):
+            with self.subTest(run_cmd=run_cmd.__name__):
+                # Arbitrary bytes round-trip through surrogateescape only in
+                # UTF-8 and single-byte encodings, not in a multibyte encoding
+                # such as EUC-JP.
+                if encoding is not None:
+                    try:
+                        lossless = len(bytes(range(256)).decode(
+                            encoding, 'surrogateescape')) == 256
+                    except UnicodeError:
+                        lossless = False
+                else:
+                    lossless = True
+                if not lossless:
+                    self.skipTest(f'{encoding} cannot losslessly '
+                                  f'round-trip arbitrary bytes')
                 for arg in test_args:
                     proc = run_cmd(arg)
                     self.assertEqual(proc.stdout.rstrip(), ascii(arg))
@@ -997,6 +1035,17 @@ class CmdLineTest(unittest.TestCase):
     def res2int(self, res):
         out = res.out.strip().decode("utf-8")
         return tuple(int(i) for i in out.split())
+
+    def test_dump_path_config(self):
+        # gh-151253: At the first import (import encodings) during Python
+        # startup, if the import fails, dump the Python path configuration.
+        nonexistent = '/nonexistent-python-path'
+        # Use -X frozen_modules=off to disable frozen encodings module
+        # on release build.
+        cmd = ["-X", "frozen_modules=off", "-c", "pass"]
+        proc = assert_python_failure(*cmd, PYTHONHOME=nonexistent)
+        self.assertIn(b'Python path configuration:', proc.err)
+        self.assertIn(f"PYTHONHOME = '{nonexistent}'".encode(), proc.err)
 
 
 @unittest.skipIf(interpreter_requires_environment(),

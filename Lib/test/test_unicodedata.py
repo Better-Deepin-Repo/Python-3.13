@@ -89,9 +89,9 @@ class UnicodeFunctionsTest(unittest.TestCase):
 
     # Update this if the database changes. Make sure to do a full rebuild
     # (e.g. 'make distclean && make') to get the correct checksum.
-    expectedchecksum = ('a91d306c268ba7d5cdf14d49e63b3f967058869c'
+    expectedchecksum = ('a5b8431ae6c0a0a78075c216193b7364a0497075'
                         if quicktest else
-                        '232affd2a50ec4bd69d2482aa0291385cbdefaba')
+                        '72241cd356ce6dad7d0570d206ce869169151850')
 
     def test_function_checksum(self):
         db = self.db
@@ -116,6 +116,50 @@ class UnicodeFunctionsTest(unittest.TestCase):
         result = h.hexdigest()
         self.assertEqual(result, self.expectedchecksum)
 
+    def test_name(self):
+        name = self.db.name
+        self.assertRaises(ValueError, name, '\0')
+        self.assertRaises(ValueError, name, '\n')
+        self.assertRaises(ValueError, name, '\x1F')
+        self.assertRaises(ValueError, name, '\x7F')
+        self.assertRaises(ValueError, name, '\x9F')
+        self.assertRaises(ValueError, name, '\uFFFE')
+        self.assertRaises(ValueError, name, '\uFFFF')
+        self.assertRaises(ValueError, name, '\U0010FFFF')
+        self.assertEqual(name('\U0010FFFF', 42), 42)
+
+        self.assertEqual(name(' '), 'SPACE')
+        self.assertEqual(name('1'), 'DIGIT ONE')
+        self.assertEqual(name('A'), 'LATIN CAPITAL LETTER A')
+        self.assertEqual(name('\xA0'), 'NO-BREAK SPACE')
+        self.assertEqual(name('\u0221', None), None if self.old else
+                         'LATIN SMALL LETTER D WITH CURL')
+        self.assertEqual(name('\u3400'), 'CJK UNIFIED IDEOGRAPH-3400')
+        self.assertEqual(name('\u9FA5'), 'CJK UNIFIED IDEOGRAPH-9FA5')
+        self.assertEqual(name('\uAC00'), 'HANGUL SYLLABLE GA')
+        self.assertEqual(name('\uD7A3'), 'HANGUL SYLLABLE HIH')
+        self.assertEqual(name('\uF900'), 'CJK COMPATIBILITY IDEOGRAPH-F900')
+        self.assertEqual(name('\uFA6A'), 'CJK COMPATIBILITY IDEOGRAPH-FA6A')
+        self.assertEqual(name('\uFBF9'),
+                         'ARABIC LIGATURE UIGHUR KIRGHIZ YEH WITH HAMZA '
+                         'ABOVE WITH ALEF MAKSURA ISOLATED FORM')
+        self.assertEqual(name('\U00018B00', None), None if self.old else
+                         'KHITAN SMALL SCRIPT CHARACTER-18B00')
+        self.assertEqual(name('\U00018CD5', None), None if self.old else
+                         'KHITAN SMALL SCRIPT CHARACTER-18CD5')
+        self.assertEqual(name('\U0001B170', None), None if self.old else
+                         'NUSHU CHARACTER-1B170')
+        self.assertEqual(name('\U0001B2FB', None), None if self.old else
+                         'NUSHU CHARACTER-1B2FB')
+        self.assertEqual(name('\U0001FBA8', None), None if self.old else
+                         'BOX DRAWINGS LIGHT DIAGONAL UPPER CENTRE TO '
+                         'MIDDLE LEFT AND MIDDLE RIGHT TO LOWER CENTRE')
+        self.assertEqual(name('\U0002A6D6'), 'CJK UNIFIED IDEOGRAPH-2A6D6')
+        self.assertEqual(name('\U0002FA1D'), 'CJK COMPATIBILITY IDEOGRAPH-2FA1D')
+        self.assertEqual(name('\U000323AF', None), None if self.old else
+                         'CJK UNIFIED IDEOGRAPH-323AF')
+
+    @requires_resource('cpu')
     def test_name_inverse_lookup(self):
         for char in iterallchars():
             looked_name = self.db.name(char, None)
@@ -139,6 +183,17 @@ class UnicodeFunctionsTest(unittest.TestCase):
             "HANDBUG",
             "MODIFIER LETTER CYRILLIC SMALL QUESTION MARK",
             "???",
+            "CJK UNIFIED IDEOGRAPH-03400",
+            "CJK UNIFIED IDEOGRAPH-020000",
+            "CJK UNIFIED IDEOGRAPH-33FF",
+            "CJK UNIFIED IDEOGRAPH-F900",
+            "CJK UNIFIED IDEOGRAPH-13460",
+            "CJK UNIFIED IDEOGRAPH-17000",
+            "CJK UNIFIED IDEOGRAPH-18B00",
+            "CJK UNIFIED IDEOGRAPH-1B170",
+            "CJK COMPATIBILITY IDEOGRAPH-3400",
+            "TANGUT IDEOGRAPH-3400",
+            "HANGUL SYLLABLE AC00",
         ]:
             self.assertRaises(KeyError, self.db.lookup, nonexistant)
 
@@ -170,10 +225,14 @@ class UnicodeFunctionsTest(unittest.TestCase):
 
         # New in 4.1.0
         self.assertEqual(self.db.numeric('\U0001012A', None), None if self.old else 9000)
+        # Changed in 4.1.0
+        self.assertEqual(self.db.numeric('\u5793', None), 1e20 if self.old else None)
         # New in 5.0.0
         self.assertEqual(self.db.numeric('\u07c0', None), None if self.old else 0.0)
         # New in 5.1.0
         self.assertEqual(self.db.numeric('\ua627', None), None if self.old else 7.0)
+        # Changed in 5.2.0
+        self.assertEqual(self.db.numeric('\u09f6'), 3.0 if self.old else 3/16)
         # New in 6.0.0
         self.assertEqual(self.db.numeric('\u0b72', None), None if self.old else 0.25)
         # New in 12.0.0
@@ -275,6 +334,12 @@ class UnicodeFunctionsTest(unittest.TestCase):
         self.assertEqual(self.db.decomposition('\U000107ba'), '' if self.old else '<super> 1DF1E')
         # New in 15.0.0
         self.assertEqual(self.db.decomposition('\U0001e06d'), '' if self.old else '<super> 04B1')
+
+        # Hangul characters
+        self.assertEqual(self.db.decomposition('\uAC00'), '1100 1161')
+        self.assertEqual(self.db.decomposition('\uD4DB'), '1111 1171 11B6')
+        self.assertEqual(self.db.decomposition('\uC2F8'), '110A 1161')
+        self.assertEqual(self.db.decomposition('\uD7A3'), '1112 1175 11C2')
 
         self.assertRaises(TypeError, self.db.decomposition)
         self.assertRaises(TypeError, self.db.decomposition, 'xx')
@@ -497,6 +562,34 @@ class UnicodeFunctionsTest(unittest.TestCase):
         b = 'C\u0338' * 20  + '\xC7'
         self.assertEqual(self.db.normalize('NFC', a), b)
 
+    def test_long_combining_mark_run(self):
+        # gh-149079: avoid quadratic canonical ordering.
+        payload = "a" + ("\u0300\u0327" * 32)
+        nfd = "a" + ("\u0327" * 32) + ("\u0300" * 32)
+        nfc = "\u00e0" + ("\u0327" * 32) + ("\u0300" * 31)
+
+        self.assertEqual(self.db.normalize("NFD", payload), nfd)
+        self.assertEqual(self.db.normalize("NFKD", payload), nfd)
+        self.assertEqual(self.db.normalize("NFC", payload), nfc)
+        self.assertEqual(self.db.normalize("NFKC", payload), nfc)
+
+    def test_combining_mark_run_fast_paths(self):
+        # gh-149079: cover short runs and already-sorted long runs.
+        short_payload = "a" + ("\u0300\u0327" * 9) + "\u0300"
+        short_nfd = "a" + ("\u0327" * 9) + ("\u0300" * 10)
+        short_nfc = "\u00e0" + ("\u0327" * 9) + ("\u0300" * 9)
+        long_sorted = "a" + ("\u0327" * 30) + ("\u0300" * 30)
+        long_sorted_nfc = "\u00e0" + ("\u0327" * 30) + ("\u0300" * 29)
+
+        self.assertEqual(self.db.normalize("NFD", short_payload), short_nfd)
+        self.assertEqual(self.db.normalize("NFKD", short_payload), short_nfd)
+        self.assertEqual(self.db.normalize("NFC", short_payload), short_nfc)
+        self.assertEqual(self.db.normalize("NFKC", short_payload), short_nfc)
+        self.assertEqual(self.db.normalize("NFD", long_sorted), long_sorted)
+        self.assertEqual(self.db.normalize("NFKD", long_sorted), long_sorted)
+        self.assertEqual(self.db.normalize("NFC", long_sorted), long_sorted_nfc)
+        self.assertEqual(self.db.normalize("NFKC", long_sorted), long_sorted_nfc)
+
     def test_issue29456(self):
         # Fix #29456
         u1176_str_a = '\u1100\u1176\u11a8'
@@ -569,9 +662,9 @@ class UnicodeFunctionsTest(unittest.TestCase):
 class Unicode_3_2_0_FunctionsTest(UnicodeFunctionsTest):
     db = unicodedata.ucd_3_2_0
     old = True
-    expectedchecksum = ('76b126d719d52ba11788a627d058163106da7d56'
+    expectedchecksum = ('883824cb6c0ccf994e4451ebf281e2d6d479af47'
                         if quicktest else
-                        '871389bdd96a709929496da7f9e59718daf61adb')
+                        '44bbc0dfbfd746ba08180183482aa569a3830510')
 
 
 class UnicodeMiscTest(unittest.TestCase):
@@ -598,6 +691,22 @@ class UnicodeMiscTest(unittest.TestCase):
         error = "SyntaxError: (unicode error) \\N escapes not supported " \
             "(can't load unicodedata module)"
         self.assertIn(error, result.err.decode("ascii"))
+
+    def test_unicodedata_unload_reload(self):
+        # gh-149449: dropping unicodedata and running gc must not leave the
+        # cached _ucnhash_CAPI pointer dangling.
+        code = (
+            "import gc, sys\n"
+            "assert '\\N{GRINNING FACE}'.encode("
+            "    'ascii', errors='namereplace') == b'\\\\N{GRINNING FACE}'\n"
+            "compile(r\"x = '\\\\N{LATIN CAPITAL LETTER A}'\", '<x>', 'exec')\n"
+            "del sys.modules['unicodedata']\n"
+            "gc.collect()\n"
+            "assert '\\N{WINKING FACE}'.encode("
+            "    'ascii', errors='namereplace') == b'\\\\N{WINKING FACE}'\n"
+            "compile(r\"x = '\\\\N{LATIN CAPITAL LETTER B}'\", '<x>', 'exec')\n"
+        )
+        script_helper.assert_python_ok("-c", code)
 
     def test_decimal_numeric_consistent(self):
         # Test that decimal and numeric are consistent,

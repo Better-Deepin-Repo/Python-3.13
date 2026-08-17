@@ -1235,7 +1235,7 @@ Special attributes
    * - .. attribute:: type.__firstlineno__
      - The line number of the first line of the class definition,
        including decorators.
-       Setting the :attr:`__module__` attribute removes the
+       Setting the :attr:`~type.__module__` attribute removes the
        :attr:`!__firstlineno__` item from the type's dictionary.
 
        .. versionadded:: 3.13
@@ -1348,11 +1348,27 @@ also :func:`os.popen`, :func:`os.fdopen`, and the
 :meth:`~socket.socket.makefile` method of socket objects (and perhaps by
 other functions or methods provided by extension modules).
 
+File objects implement common methods, listed below, to simplify usage in
+generic code. They are expected to be :ref:`context-managers`.
+
 The objects ``sys.stdin``, ``sys.stdout`` and ``sys.stderr`` are
 initialized to file objects corresponding to the interpreter's standard
 input, output and error streams; they are all open in text mode and
 therefore follow the interface defined by the :class:`io.TextIOBase`
 abstract class.
+
+.. method:: file.read(size=-1, /)
+
+   Retrieve up to *size* data from the file. As a convenience if *size* is
+   unspecified or -1 retrieve all data available.
+
+.. method:: file.write(data, /)
+
+   Store *data* to the file.
+
+.. method:: file.close()
+
+   Flush any buffers and close the underlying file.
 
 
 Internal types
@@ -1858,9 +1874,9 @@ falling back to :meth:`~object.__getitem__`). [#]_
 When implementing a class that emulates any built-in type, it is important that
 the emulation only be implemented to the degree that it makes sense for the
 object being modelled.  For example, some sequences may work well with retrieval
-of individual elements, but extracting a slice may not make sense.  (One example
-of this is the :class:`~xml.dom.NodeList` interface in the W3C's Document
-Object Model.)
+of individual elements, but extracting a slice may not make sense.
+(One example of this is the :ref:`NodeList <dom-nodelist-objects>` interface
+in the W3C's Document Object Model.)
 
 
 .. _customization:
@@ -2094,7 +2110,7 @@ Basic customization
    :data:`!NotImplemented`.  There are no other implied relationships among the
    comparison operators or default implementations; for example, the truth of
    ``(x<y or x==y)`` does not imply ``x<=y``. To automatically generate ordering
-   operations from a single root operation, see :func:`functools.total_ordering`.
+   operations from a single root operation, see :deco:`functools.total_ordering`.
 
    By default, the :class:`object` class provides implementations consistent
    with :ref:`expressions-value-comparisons`: equality compares according to
@@ -2189,7 +2205,7 @@ Basic customization
       This is intended to provide protection against a denial-of-service caused
       by carefully chosen inputs that exploit the worst case performance of a
       dict insertion, *O*\ (*n*\ :sup:`2`) complexity.  See
-      http://ocert.org/advisories/ocert-2011-003.html for details.
+      https://ocert.org/advisories/ocert-2011-003.html for details.
 
       Changing hash values affects the iteration order of sets.
       Python has never made guarantees about this ordering
@@ -2518,7 +2534,7 @@ implemented as non-data descriptors.  Accordingly, instances can redefine and
 override methods.  This allows individual instances to acquire behaviors that
 differ from other instances of the same class.
 
-The :func:`property` function is implemented as a data descriptor. Accordingly,
+The :deco:`property` decorator is implemented as a data descriptor. Accordingly,
 instances cannot override the behavior of a property.
 
 
@@ -2652,7 +2668,7 @@ class defining the method.
    .. versionadded:: 3.6
 
 
-When a class is created, :meth:`type.__new__` scans the class variables
+When a class is created, :meth:`!type.__new__` scans the class variables
 and makes callbacks to those with a :meth:`~object.__set_name__` hook.
 
 .. method:: object.__set_name__(self, owner, name)
@@ -3685,6 +3701,9 @@ should not directly raise unhandled :exc:`StopIteration` exceptions.
 Coroutines also have the methods listed below, which are analogous to
 those of generators (see :ref:`generator-methods`).  However, unlike
 generators, coroutines do not directly support iteration.
+
+Coroutines are :ref:`generic <generics>` over the types of their yield, send,
+and return values, respectively.
 
 .. versionchanged:: 3.5.2
    It is a :exc:`RuntimeError` to await on a coroutine more than once.

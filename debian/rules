@@ -33,8 +33,6 @@ dh_compat2 := $(shell dpkg --compare-versions "$$(dpkg-query -f '$${Version}' -W
 ifneq (,$(findstring nocheck, $(DEB_BUILD_OPTIONS)))
   WITHOUT_CHECK := yes
 endif
-# Skip the build-time regression suite for Better-Deepin OBS builds.
-WITHOUT_CHECK := yes
 WITHOUT_BENCH :=
 ifneq (,$(findstring nobench, $(DEB_BUILD_OPTIONS)))
   WITHOUT_BENCH := yes
@@ -218,8 +216,6 @@ endif
 ifneq (,$(findstring nopgo, $(DEB_BUILD_OPTIONS)))
   with_pgo :=
 endif
-# PGO runs a profile task from the regression suite, so keep it disabled too.
-with_pgo :=
 
 ifneq (,$(findstring nolto, $(DEB_BUILD_OPTIONS)))
   with_lto :=

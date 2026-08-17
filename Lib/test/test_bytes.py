@@ -580,6 +580,32 @@ class BaseBytesTest:
         with self.assertRaises(TypeError):
             dot_join([memoryview(b"ab"), "cd", b"ef"])
 
+    def test_join_concurrent_buffer_mutation(self):
+        # __buffer__() can release the GIL, letting another thread concurrently
+        # mutate the joined sequence (simulated here by mutating in __buffer__).
+        # See: https://github.com/python/cpython/issues/151295
+        def make_seq(mutate):
+            # Item is only referenced from the list slot, so mutate() frees it.
+            class Item:
+                def __buffer__(self, flags):
+                    mutate(seq)
+                    return memoryview(b'x')
+            seq = [b'a', Item(), b'c']
+            return seq
+
+        for sep in (self.type2test(b''), self.type2test(b'::')):
+            with self.subTest(sep=sep):
+                # Changing the list length is reported as a RuntimeError.
+                seq = make_seq(lambda seq: seq.clear())
+                self.assertRaises(RuntimeError, sep.join, seq)
+
+                # The list length is unchanged, so the size-change recheck
+                # cannot fire: only keeping the item alive avoids the crash.
+                def replace(seq):
+                    seq[1] = b'z'
+                seq = make_seq(replace)
+                self.assertEqual(sep.join(seq), sep.join([b'a', b'x', b'c']))
+
     def test_count(self):
         b = self.type2test(b'mississippi')
         i = 105
@@ -2169,12 +2195,19 @@ class FixedStringTest(test.string_tests.BaseTest):
 
     contains_bytes = True
 
+    def test_mixed_cmp(self):
+        a = self.type2test(b'ab')
+        for t in bytes, bytearray, BytesSubclass, ByteArraySubclass:
+            with self.subTest(t.__name__):
+                self._assert_cmp(a, t(b'ab'), 0)
+                self._assert_cmp(a, t(b'a'), 1)
+                self._assert_cmp(a, t(b'ac'), -1)
+
 class ByteArrayAsStringTest(FixedStringTest, unittest.TestCase):
     type2test = bytearray
 
 class BytesAsStringTest(FixedStringTest, unittest.TestCase):
     type2test = bytes
-
 
 class SubclassTest:
 

@@ -1111,13 +1111,13 @@ Sequence types also support the following methods:
 
    Return the total number of occurrences of *value* in *sequence*.
 
-.. method:: list.index(value[, start[, stop])
-            range.index(value[, start[, stop])
-            tuple.index(value[, start[, stop])
+.. method:: list.index(value[, start[, stop]])
+            range.index(value[, start[, stop]])
+            tuple.index(value[, start[, stop]])
    :no-contents-entry:
    :no-index-entry:
    :no-typesetting:
-.. method:: sequence.index(value[, start[, stop])
+.. method:: sequence.index(value[, start[, stop]])
 
    Return the index of the first occurrence of *value* in *sequence*.
 
@@ -1234,7 +1234,7 @@ Mutable sequence types also support the following methods:
    :no-typesetting:
 .. method:: sequence.append(value, /)
 
-   Append *value* to the end of the sequence
+   Append *value* to the end of the sequence.
    This is equivalent to writing ``seq[len(seq):len(seq)] = [value]``.
 
 .. method:: bytearray.clear()
@@ -1351,6 +1351,8 @@ application).
    Many other operations also produce lists, including the :func:`sorted`
    built-in.
 
+   Lists are :ref:`generic <generics>` over the types of their items.
+
    Lists implement all of the :ref:`common <typesseq-common>` and
    :ref:`mutable <typesseq-mutable>` sequence operations. Lists also provide the
    following additional method:
@@ -1436,6 +1438,10 @@ homogeneous data is needed (such as allowing storage in a :class:`set` or
 
    Tuples implement all of the :ref:`common <typesseq-common>` sequence
    operations.
+
+   Tuples are :ref:`generic <generics>` over the types of their contents.
+   For more information, refer to
+   :ref:`the typing documentation on annotating tuples <annotating-tuples>`.
 
 For heterogeneous collections of data where access by name is clearer than
 access by index, :func:`collections.namedtuple` may be a more appropriate
@@ -1939,7 +1945,18 @@ expression support in the :mod:`re` module).
    Return ``True`` if all characters in the string are alphanumeric and there is at
    least one character, ``False`` otherwise.  A character ``c`` is alphanumeric if one
    of the following returns ``True``: ``c.isalpha()``, ``c.isdecimal()``,
-   ``c.isdigit()``, or ``c.isnumeric()``.
+   ``c.isdigit()``, or ``c.isnumeric()``. For example:
+
+   .. doctest::
+
+      >>> 'abc123'.isalnum()
+      True
+      >>> 'abc123!@#'.isalnum()
+      False
+      >>> ''.isalnum()
+      False
+      >>> ' '.isalnum()
+      False
 
 
 .. method:: str.isalpha()
@@ -2006,8 +2023,24 @@ expression support in the :mod:`re` module).
    character, ``False`` otherwise.  Digits include decimal characters and digits that need
    special handling, such as the compatibility superscript digits.
    This covers digits which cannot be used to form numbers in base 10,
-   like the Kharosthi numbers.  Formally, a digit is a character that has the
+   like the `Kharosthi numbers <https://en.wikipedia.org/wiki/Kharosthi#Numerals>`__.
+   Formally, a digit is a character that has the
    property value Numeric_Type=Digit or Numeric_Type=Decimal.
+
+   For example:
+
+   .. doctest::
+
+      >>> '0123456789'.isdigit()
+      True
+      >>> '٠١٢٣٤٥٦٧٨٩'.isdigit()  # Arabic-Indic digits zero to nine
+      True
+      >>> '⅕'.isdigit()  # Vulgar fraction one fifth
+      False
+      >>> '²'.isdecimal(), '²'.isdigit(),  '²'.isnumeric()
+      (False, True, True)
+
+   See also :meth:`isdecimal` and :meth:`isnumeric`.
 
 
 .. method:: str.isidentifier()
@@ -2049,15 +2082,14 @@ expression support in the :mod:`re` module).
 
       >>> '0123456789'.isnumeric()
       True
-      >>> '٠١٢٣٤٥٦٧٨٩'.isnumeric()  # Arabic-indic digit zero to nine
+      >>> '٠١٢٣٤٥٦٧٨٩'.isnumeric()  # Arabic-Indic digits zero to nine
       True
       >>> '⅕'.isnumeric()  # Vulgar fraction one fifth
       True
       >>> '²'.isdecimal(), '²'.isdigit(),  '²'.isnumeric()
       (False, True, True)
 
-   See also :meth:`isdecimal` and :meth:`isdigit`. Numeric characters are
-   a superset of decimal numbers.
+   See also :meth:`isdecimal` and :meth:`isdigit`.
 
 
 .. method:: str.isprintable()
@@ -2085,16 +2117,33 @@ expression support in the :mod:`re` module).
       >>> '\t'.isprintable(), '\n'.isprintable()
       (False, False)
 
+   See also :meth:`isspace`.
+
 
 .. method:: str.isspace()
 
    Return ``True`` if there are only whitespace characters in the string and there is
    at least one character, ``False`` otherwise.
 
+   For example:
+
+   .. doctest::
+
+      >>> ''.isspace()
+      False
+      >>> ' '.isspace()
+      True
+      >>> '\t\n'.isspace() # TAB and BREAK LINE
+      True
+      >>> '\u3000'.isspace() # IDEOGRAPHIC SPACE
+      True
+
    A character is *whitespace* if in the Unicode character database
    (see :mod:`unicodedata`), either its general category is ``Zs``
    ("Separator, space"), or its bidirectional class is one of ``WS``,
    ``B``, or ``S``.
+
+   See also :meth:`isprintable`.
 
 
 .. method:: str.istitle()
@@ -2231,6 +2280,19 @@ expression support in the :mod:`re` module).
    after the separator.  If the separator is not found, return a 3-tuple containing
    the string itself, followed by two empty strings.
 
+   For example:
+
+   .. doctest::
+
+      >>> 'Monty Python'.partition(' ')
+      ('Monty', ' ', 'Python')
+      >>> "Monty Python's Flying Circus".partition(' ')
+      ('Monty', ' ', "Python's Flying Circus")
+      >>> 'Monty Python'.partition('-')
+      ('Monty Python', '', '')
+
+   See also :meth:`rpartition`.
+
 
 .. method:: str.removeprefix(prefix, /)
 
@@ -2329,6 +2391,19 @@ expression support in the :mod:`re` module).
    done using the specified *fillchar* (default is an ASCII space). The
    original string is returned if *width* is less than or equal to ``len(s)``.
 
+   For example:
+
+   .. doctest::
+
+      >>> 'Python'.rjust(10)
+      '    Python'
+      >>> 'Python'.rjust(10, '.')
+      '....Python'
+      >>> 'Monty Python'.rjust(10, '.')
+      'Monty Python'
+
+   See also :meth:`ljust` and :meth:`zfill`.
+
 
 .. method:: str.rpartition(sep, /)
 
@@ -2365,20 +2440,26 @@ expression support in the :mod:`re` module).
    Return a copy of the string with trailing characters removed.  The *chars*
    argument is a string specifying the set of characters to be removed.  If omitted
    or ``None``, the *chars* argument defaults to removing whitespace.  The *chars*
-   argument is not a suffix; rather, all combinations of its values are stripped::
+   argument is not a suffix; rather, all combinations of its values are stripped.
+   For example:
+
+   .. doctest::
 
       >>> '   spacious   '.rstrip()
       '   spacious'
       >>> 'mississippi'.rstrip('ipz')
       'mississ'
 
-   See :meth:`str.removesuffix` for a method that will remove a single suffix
+   See :meth:`removesuffix` for a method that will remove a single suffix
    string rather than all of a set of characters.  For example::
 
       >>> 'Monty Python'.rstrip(' Python')
       'M'
       >>> 'Monty Python'.removesuffix(' Python')
       'Monty'
+
+   See also :meth:`strip`.
+
 
 .. method:: str.split(sep=None, maxsplit=-1)
 
@@ -2395,7 +2476,9 @@ expression support in the :mod:`re` module).
    :func:`re.split`). Splitting an empty string with a specified separator
    returns ``['']``.
 
-   For example::
+   For example:
+
+   .. doctest::
 
       >>> '1,2,3'.split(',')
       ['1', '2', '3']
@@ -2413,7 +2496,9 @@ expression support in the :mod:`re` module).
    string or a string consisting of just whitespace with a ``None`` separator
    returns ``[]``.
 
-   For example::
+   For example:
+
+   .. doctest::
 
       >>> '1 2 3'.split()
       ['1', '2', '3']
@@ -2425,7 +2510,9 @@ expression support in the :mod:`re` module).
    If *sep* is not specified or is ``None`` and  *maxsplit* is ``0``, only
    leading runs of consecutive whitespace are considered.
 
-   For example::
+   For example:
+
+   .. doctest::
 
       >>> "".split(None, 0)
       []
@@ -2434,7 +2521,7 @@ expression support in the :mod:`re` module).
       >>> "   foo   ".split(maxsplit=0)
       ['foo   ']
 
-   See also :meth:`join`.
+   See also :meth:`join` and :meth:`rsplit`.
 
 
 .. index::
@@ -2510,6 +2597,19 @@ expression support in the :mod:`re` module).
    test string beginning at that position.  With optional *end*, stop comparing
    string at that position.
 
+   For example:
+
+   .. doctest::
+
+      >>> 'Python'.startswith('Py')
+      True
+      >>> 'a tuple of prefixes'.startswith(('at', 'a'))
+      True
+      >>> 'Python is amazing'.startswith('is', 7)
+      True
+
+   See also :meth:`endswith` and :meth:`removeprefix`.
+
 
 .. method:: str.strip(chars=None, /)
 
@@ -2517,7 +2617,13 @@ expression support in the :mod:`re` module).
    The *chars* argument is a string specifying the set of characters to be removed.
    If omitted or ``None``, the *chars* argument defaults to removing whitespace.
    The *chars* argument is not a prefix or suffix; rather, all combinations of its
-   values are stripped::
+   values are stripped.
+
+   Whitespace characters are defined by :meth:`str.isspace`.
+
+   For example:
+
+   .. doctest::
 
       >>> '   spacious   '.strip()
       'spacious'
@@ -2528,18 +2634,37 @@ expression support in the :mod:`re` module).
    from the string. Characters are removed from the leading end until
    reaching a string character that is not contained in the set of
    characters in *chars*. A similar action takes place on the trailing end.
-   For example::
+
+   For example:
+
+   .. doctest::
 
       >>> comment_string = '#....... Section 3.2.1 Issue #32 .......'
       >>> comment_string.strip('.#! ')
       'Section 3.2.1 Issue #32'
 
+   See also :meth:`rstrip`.
+
 
 .. method:: str.swapcase()
 
    Return a copy of the string with uppercase characters converted to lowercase and
-   vice versa. Note that it is not necessarily true that
-   ``s.swapcase().swapcase() == s``.
+   vice versa. For example:
+
+   .. doctest::
+
+      >>> 'Hello World'.swapcase()
+      'hELLO wORLD'
+
+   Note that it is not necessarily true that ``s.swapcase().swapcase() == s``.
+   For example:
+
+   .. doctest::
+
+      >>> 'straße'.swapcase().swapcase()
+      'strasse'
+
+   See also :meth:`str.lower` and :meth:`str.upper`.
 
 
 .. method:: str.title()
@@ -2617,12 +2742,16 @@ expression support in the :mod:`re` module).
    than before. The original string is returned if *width* is less than
    or equal to ``len(s)``.
 
-   For example::
+   For example:
+
+   .. doctest::
 
       >>> "42".zfill(5)
       '00042'
       >>> "-42".zfill(5)
       '-0042'
+
+   See also :meth:`rjust`.
 
 
 .. index::
@@ -2925,6 +3054,10 @@ The conversion types are:
 | ``'%'``    | No argument is converted, results in a ``'%'``      |       |
 |            | character in the result.                            |       |
 +------------+-----------------------------------------------------+-------+
+
+For floating-point formats, the result should be correctly rounded to a given
+precision ``p`` of digits after the decimal point.  The rounding mode matches
+that of the :func:`round` builtin.
 
 Notes:
 
@@ -4888,6 +5021,7 @@ Note, the *elem* argument to the :meth:`~object.__contains__`,
 :meth:`~set.discard` methods may be a set.  To support searching for an equivalent
 frozenset, a temporary one is created from *elem*.
 
+Sets and frozensets are :ref:`generic <generics>` over the type of their elements.
 
 .. _typesmapping:
 
@@ -4984,6 +5118,9 @@ can be used interchangeably to index the same dictionary entry.
    .. versionchanged:: 3.7
       Dictionary order is guaranteed to be insertion order.  This behavior was
       an implementation detail of CPython from 3.6.
+
+   Dictionaries are :ref:`generic <generics>` over two types, signifying
+   (respectively) the types of the dictionary's keys and values.
 
    These are the operations that dictionaries support (and therefore, custom
    mapping types should support too):
@@ -5423,7 +5560,8 @@ type and the :class:`bytes` data type:
 
 ``GenericAlias`` objects are instances of the class
 :class:`types.GenericAlias`, which can also be used to create ``GenericAlias``
-objects directly.
+objects directly. Specializations of user-defined :ref:`generic classes <generic-classes>`
+may not be instances of :class:`types.GenericAlias`, but they provide similar functionality.
 
 .. describe:: T[X, Y, ...]
 
@@ -5471,6 +5609,15 @@ creation::
    >>> l = t()
    >>> type(l)
    <class 'list'>
+
+
+Instances of ``GenericAlias`` are not classes at runtime, even though they behave like classes (they can be instantiated and subclassed)::
+
+   >>> import inspect
+   >>> inspect.isclass(list[int])
+   False
+
+This is true for :ref:`user-defined generics <user-defined-generics>` also.
 
 Calling :func:`repr` or :func:`str` on a generic shows the parameterized type::
 

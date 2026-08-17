@@ -1,3 +1,53 @@
+python3.13 (3.13.15-1) unstable; urgency=medium
+
+  * Python 3.13.15 release.
+  * Drop the the min-pyrepl-import patch, handled by an upstream backport.
+  * Refresh patches.
+
+ -- Matthias Klose <doko@debian.org>  Tue, 11 Aug 2026 10:30:27 +0200
+
+python3.13 (3.13.14-1) unstable; urgency=medium
+
+  * Python 3.13.14.
+    - Avoid crash decompressing untrusted bz2 data. CVE-2026-9669.
+    - Don't trust server-provided passive connection addresses in ftplib.
+      CVE-2026-8328.
+    - Don't allow untrusted tarfile extraction to write outside the
+      destination. CVE-2026-7774.
+    - Protects against DoS in expat XML parsing. CVE-2026-7210.
+    - Avoid use-after-free in decompressors under memory pressure.
+      CVE-2026-6100.
+    - Base64-encode cookie values embedded in JS. CVE-2026-6019.
+    - Protect webbrowser %action substitutions. CVE-2026-4786.
+    - Avoid DoS in unicode normalization. CVE-2026-3276.
+    - Reject CR/LF in HTTP tunnel request headers. CVE-2026-1502.
+    - Fixes reference leaks in ssl.Context. Closes: #1138157.
+  * Python 3.13.13 resolved some security issues:
+    - Avoid launching webbrowser with attacker controlled options.
+      CVE-2026-4519.
+    - Avoid C stack overflow in Expat parsing with registered
+      ElementDeclHandler. CVE-2026-4224.
+    - Reject control characters in Morsel cookies. CVE-2026-3644.
+    - Base64 decode no longer ignores data after the first padded quad.
+      CVE-2026-3446.
+    - Ensure io.open_code is used to read .pyc files. CVE-2026-2297.
+    - Skip TarInfo DIRTYPE normalization during GNU long name handling.
+      CVE-2025-13462.
+
+  [ Matthias Klose ]
+  * Explicitly build-depend on uuid-dev. LP: #2147343.
+
+  [ Colin Watson ]
+  * Drop libnsl-dev build-dependency, which is superfluous since the nis
+    module was removed in Python 3.13.
+
+  [ Stefano Rivera ]
+  * Refresh patches.
+  * Drop mention of gdbinit from README.debug. Closes: #1109449.
+  * Tidy up python3.X-config manpage. Closes: #1101810.
+
+ -- Stefano Rivera <stefanor@debian.org>  Wed, 10 Jun 2026 14:10:12 -0400
+
 python3.13 (3.13.12-1) unstable; urgency=medium
 
   * Python 3.13.12.
